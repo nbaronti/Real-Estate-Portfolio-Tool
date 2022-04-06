@@ -1,0 +1,6 @@
+Work_Profile_ID,Work_Profile_Description,Sharing_Ratio,Seat_Buffer
+Work_Profile_1,FT Onsite Worker (5 Days per Week),1.0,0.05
+Work_Profile_2,Hybrid Worker (3.5 Days per Week),1.5,0.05
+Work_Profile_3,Hybrid Worker (1.5 Days per Week),3.0,0.05
+Work_Profile_4,Remote Worker (0.5 Days per Week),10.0,0.05
+Work_Profile_5,Not Assigned (0 Days per Week),0.0,0.05

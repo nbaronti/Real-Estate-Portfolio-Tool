@@ -1,0 +1,6 @@
+Site_ID,S1_Action,S2_Action,S3_Action,S4_Action,S5_Action
+Site_1,Exit,Exit,Exit,Exit,Optimize
+Site_2,Optimize,Exit,Exit,Exit,Optimize
+Site_3,Optimize,Optimize,Exit,Exit,Optimize
+Site_4,Optimize,Optimize,Optimize,Exit,Optimize
+Site_5,Optimize,Optimize,Optimize,Optimize,Optimize
