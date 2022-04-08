@@ -1,4 +1,5 @@
 -- Drop table if exists (once python scripts loads)
+DROP VIEW IF EXISTS detailed_site_view;
 DROP TABLE IF EXISTS bu_distribution;
 DROP TABLE IF EXISTS scenario;
 DROP TABLE IF EXISTS worker_distribution;
