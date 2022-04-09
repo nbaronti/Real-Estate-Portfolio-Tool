@@ -50,7 +50,7 @@ def LoadPortfolioData(filepath):
     conn.commit()
     conn.close()
     end = timeit.default_timer()
-    print('The time it took was : ',str(end-start))
+    return print('The time it took was : ',str(end-start))
     
 def CurrentPortfolio():
     query = f'''SELECT * FROM detailed_site_view'''
@@ -67,6 +67,13 @@ def CurrentPortfolio():
     title="Current Portfolio Map",
     size="Rentable_Square_Feet")
     site_level_map.show()
+    
+def EnterprisePortfolioCalculations():
+    scenario_input = scenario_selection
+    query = f'''SELECT * FROM enterprise_workplace_calculations as ewc WHERE ewc."Scenario_ID" = '{scenario_input}' '''
+    portfolio_calculations = pd.read_sql_query(query,engine)
+    return portfolio_calculations
+
 
 # @st.cache (allow_output_mutation=True)
 # =============================================================================
@@ -89,17 +96,33 @@ if option == "Load Portfolio Data":
     st.write("PLEASE READ:  \n 1. Source Files must be in .XLSX format.  \n 2. After you hit the submit button below, the program will run and give you a download button at the bottom upon completion.")
     col1, col2 = st.columns(2)
     with col1:
-        first = st.file_uploader(label="Upload Source File")
+        file = st.file_uploader(label="Upload Source File")
     with col2:
         st.write("")
     if st.button('Submit'):
-        LoadPortfolioData(first)
+        LoadPortfolioData(file)
         st.write("Done!")
         
 st.write('\n'*3)
 
 st.write("Display the Current Portfolio Map")
+Market = st.text_input("Enter Market for Map")
 st.write('\n'*2)
-if st.button('Run Current Portfolio Calculation'):
+if st.button('Generate Current Portfolio Map'):
     CurrentPortfolio()
+    print('Done.')
+    
+st.write("Select Approach for Portfolio Calculations")
+
+st.write('\n'*2)
+calc_type = st.selectbox('Choose Calculation Type:', ('Enterprise Distribution Approach', 'Business Distribution Approach', 'Worker Distribution Approach'))
+scenario_selection = st.selectbox('Choose Scenario:', ('Scenario_1', 'Scenario_2', 'Scenario_3', 'Scenario_4', 'Scenario_5'))
+
+st.write('\n'*2)
+
+st.write("Run Portfolio Analytics Calculations")
+st.write('\n'*2)
+
+if st.button('Run Calculations'):
+    st.dataframe(EnterprisePortfolioCalculations())
     print('Done.')
