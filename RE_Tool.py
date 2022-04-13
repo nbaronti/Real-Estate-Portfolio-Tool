@@ -10,6 +10,9 @@ from dotenv import load_dotenv
 import timeit
 import streamlit as st
 from datetime import date
+import datetime
+from PIL import Image
+import numpy as np
 
 # create engine with postgres sql DB address
 
@@ -29,31 +32,41 @@ def LoadPortfolioData(filepath):
     sheets = data.keys()
     for sheet_name in sheets:
         sheet = pd.read_excel(filepath, sheet_name=sheet_name)
-        sheet.to_csv("%s.csv" % sheet_name, index=False)
+        sheet.to_csv("02_CSV_Exports/%s.csv" % sheet_name, index=False)
     sheets_list = list(sheets)
     conn = psycopg2.connect(database="REAL", user='postgres', password='postgres', host='localhost', port='5432')
     conn.autocommit = True
     cursor = conn.cursor()
-    schema_sql = open("schema.sql", "r").read()
+    schema_sql = open("03_SQL_Scripts/schema.sql", "r").read()
     cursor.execute(schema_sql)
     conn.commit()
     conn.close()
     for sheet in sheets_list:
         sheet_csv = sheet + ".csv"
-        sheet_df = pd.read_csv(sheet_csv)
+        sheet_df = pd.read_csv(f"02_CSV_Exports/{sheet_csv}")
         sheet_df.to_sql(con=engine, index=False, name=sheet, if_exists='append')
     conn = psycopg2.connect(database="REAL", user='postgres', password='postgres', host='localhost', port='5432')
     conn.autocommit = True
     cursor = conn.cursor()
-    query_sql = open("query.sql", "r").read()
+    query_sql = open("03_SQL_Scripts/query.sql", "r").read()
     cursor.execute(query_sql)
     conn.commit()
     conn.close()
     end = timeit.default_timer()
     return print('The time it took was : ',str(end-start))
+
+def Market():
+    query = f'''SELECT "Market" FROM market_costs'''
+    market_df = pd.read_sql_query(query,engine)
+    return market_df
+
+def Scenario():
+    query = f'''SELECT "Scenario_ID" FROM scenario'''
+    scenario_df = pd.read_sql_query(query,engine)
+    return scenario_df
     
 def CurrentPortfolio():
-    query = f'''SELECT * FROM detailed_site_view'''
+    query = f'''SELECT * FROM detailed_site_view WHERE detailed_site_view."Market" = '{Market}' '''
     detailed_site_DF = pd.read_sql_query(query,engine)
     site_level_map = px.scatter_mapbox(
     detailed_site_DF,
@@ -68,10 +81,37 @@ def CurrentPortfolio():
     size="Rentable_Square_Feet")
     site_level_map.show()
     
-def EnterprisePortfolioCalculations():
+def EnterpriseDistributionCalculations():
     scenario_input = scenario_selection
-    query = f'''SELECT * FROM enterprise_workplace_calculations as ewc WHERE ewc."Scenario_ID" = '{scenario_input}' '''
+    query = f'''SELECT * FROM enterprise_distribution_calculations as edc WHERE edc."Scenario_ID" = '{scenario_input}' '''
+    enterprise_calculations = pd.read_sql_query(query,engine)
+    enterprise_calculations["Allocable HC"] = enterprise_calculations["Headcount"] * enterprise_calculations["Profile_Distribution"]
+    enterprise_calculations["Potential Future Seats (No Buffer)"] = enterprise_calculations["Allocable HC"] / enterprise_calculations["Sharing_Ratio"]
+    enterprise_calculations["Buffer Seats"] = enterprise_calculations["Potential Future Seats (No Buffer)"] * enterprise_calculations["Seat_Buffer"]
+    enterprise_calculations["Potential Future Seats (With Buffer)"] = enterprise_calculations["Potential Future Seats (No Buffer)"] + enterprise_calculations["Buffer Seats"]
+    enterprise_calculations["Potential Future Seats (With Buffer)"].fillna(0, inplace=True)
+    potential_seats_df = enterprise_calculations[["Site_ID","Potential Future Seats (With Buffer)"]]
+    potential_seats_site_level = potential_seats_df.groupby(["Site_ID"]).sum().round({'Potential Future Seats (With Buffer)': 0}).astype(np.int64)
+    query2 = f'''SELECT * FROM detailed_site_view as dsv'''
+    site_df = pd.read_sql_query(query2,engine)
+    site_df.set_index("Site_ID",inplace=True)
+    combined_site_df_with_cals = pd.concat([site_df,potential_seats_site_level], axis=1)
+    combined_site_df_with_cals.rename(columns={'Potential Future Seats (With Buffer)' : 'Potential Seats'}, inplace=True)
+    combined_site_df_with_cals["Reduction Opportunity"] = 1 - (combined_site_df_with_cals["Potential Seats"] / combined_site_df_with_cals["Seats"])
+    return combined_site_df_with_cals
+
+def BusinessDistributionCalculations():
+    scenario_input = scenario_selection
+    query = f'''SELECT * FROM business_distribution_calculations as ewc WHERE ewc."Scenario_ID" = '{scenario_input}' '''
     portfolio_calculations = pd.read_sql_query(query,engine)
+    
+    return portfolio_calculations
+
+def WorkerDistributionCalculations():
+    scenario_input = scenario_selection
+    query = f'''SELECT * FROM worker_workplace_calculations as ewc WHERE ewc."Scenario_ID" = '{scenario_input}' '''
+    portfolio_calculations = pd.read_sql_query(query,engine)
+    
     return portfolio_calculations
 
 
@@ -79,44 +119,43 @@ def EnterprisePortfolioCalculations():
 # =============================================================================
 
 st.set_page_config(layout="wide")
-st.title('Real Estate Portfolio Tool')
-st.write("Choose the operation below to run the Real Estate Portfolio Tool")
+
+title = st.title('Real Estate Portfolio Tool') 
+
+st.write('\n'*2)
+
+st.header("Choose Operation & Load Portfolio Data")
 
 dateToday = str(date.today())
-col1, col2 = st.columns(2)
 
-with col1:
-    option = st.selectbox('Choose Operation:', ('Load Portfolio Data', 'Other'))
-with col2:
-    st.write("")
-
-st.write("")
+option = st.selectbox('Choose Operation:', ('Load Portfolio Data', 'Other Operation'))
         
 if option == "Load Portfolio Data":
-    st.write("PLEASE READ:  \n 1. Source Files must be in .XLSX format.  \n 2. After you hit the submit button below, the program will run and give you a download button at the bottom upon completion.")
-    col1, col2 = st.columns(2)
-    with col1:
-        file = st.file_uploader(label="Upload Source File")
-    with col2:
-        st.write("")
-    if st.button('Submit'):
-        LoadPortfolioData(file)
-        st.write("Done!")
-        
-st.write('\n'*3)
+    st.write("PLEASE READ:  \n 1) Source Files must be in .XLSX format.  \n 2) After you hit the submit button below, the file will load and then a message will appear saying the upload is complete.")
 
-st.write("Display the Current Portfolio Map")
-Market = st.text_input("Enter Market for Map")
+file = st.file_uploader(label="Upload Source File")
+if st.button('Submit'):
+    LoadPortfolioData(file)
+    st.write("Upload Complete!")
+        
+st.write('\n'*2)
+
+st.header("Display the Current Portfolio Map")
+Market = st.selectbox("Select Market",Market())
 st.write('\n'*2)
 if st.button('Generate Current Portfolio Map'):
     CurrentPortfolio()
     print('Done.')
-    
-st.write("Select Approach for Portfolio Calculations")
+
+st.write('\n'*2)
+
+st.header("Run Portfolio Calculations")
 
 st.write('\n'*2)
 calc_type = st.selectbox('Choose Calculation Type:', ('Enterprise Distribution Approach', 'Business Distribution Approach', 'Worker Distribution Approach'))
-scenario_selection = st.selectbox('Choose Scenario:', ('Scenario_1', 'Scenario_2', 'Scenario_3', 'Scenario_4', 'Scenario_5'))
+scenario_selection = st.selectbox('Choose Scenario:', Scenario())
+start_date = st.date_input('Input Calculation Start Date', value=datetime.date(2022, 1, 1))
+end_date = st.date_input('Input Calculation End Date', value=datetime.date(2031, 12, 31))
 
 st.write('\n'*2)
 
@@ -124,5 +163,5 @@ st.write("Run Portfolio Analytics Calculations")
 st.write('\n'*2)
 
 if st.button('Run Calculations'):
-    st.dataframe(EnterprisePortfolioCalculations())
+    st.dataframe(EnterpriseDistributionCalculations())
     print('Done.')

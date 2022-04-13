@@ -1,0 +1,6 @@
+Site_ID,Site_Name,Address,City,State_Province,Market,MSA,Country,Region,Latitude,Longitude,Tenure_Type,LED,Rentable_Square_Feet,Usable_Square_Feet,Seats,PNL_Rent,PNL_OpEx,Cash_Rent,Cash_OpEx
+Site_1,Site 1,111 S Wacker Dr,Chicago,IL,Chicago_CBD,Greater Chicago,United States,Americas,41.88048,-87.63654,Leased,2023-10-01,100000,80000,500,5500000,1000000,6050000.000000001,1000000
+Site_2,Site 2,210 North Carpenter Street,Chicago,IL,Chicago_CBD,Greater Chicago,United States,Americas,41.88613,-87.65344,Leased,2024-10-01,50000,40000,250,2750000,500000,3025000.0000000005,500000
+Site_3,Site 3,675 N. Field Drive,Lake Forest,IL,Chicago_Suburbs,Greater Chicago,United States,Americas,42.25124,-87.89726,Leased,2025-10-01,100000,80000,500,4500000,1000000,4950000.0,1000000
+Site_4,Site 4,100 North Riverside Plaza,Chicago,IL,Chicago_CBD,Greater Chicago,United States,Americas,41.88384,-87.63878,Leased,2026-10-01,75000,60000,375,4125000,750000,4537500.0,750000
+Site_5,Site 5,200 Wilmot Road,Deerfield,IL,Chicago_Suburbs,Greater Chicago,United States,Americas,42.15676,-87.87115,Leased,2027-10-01,300000,240000,1500,13500000,3000000,14850000.000000002,3000000
