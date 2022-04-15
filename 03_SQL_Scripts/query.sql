@@ -30,7 +30,8 @@ CREATE VIEW enterprise_distribution_calculations AS
 SELECT sa."Scenario_ID", sa."Site_ID", sa."Site_Action",
        ed."Work_Profile_ID", sh."Work_Profile_Description", 
        sh."Sharing_Ratio", sh."Seat_Buffer", 
-       ed."Profile_Distribution", dsv."Headcount"
+       ed."Profile_Distribution", dsv."Headcount",
+	   si."Market"
 FROM scenario as s
 INNER JOIN site_actions as sa
 ON sa."Scenario_ID" = s."Scenario_ID"
@@ -39,6 +40,11 @@ ON ed."Scenario_ID" = sa."Scenario_ID"
 INNER JOIN detailed_site_view as dsv
 ON dsv."Site_ID" = sa."Site_ID"
 INNER JOIN sharing as sh
-ON sh."Work_Profile_ID" = ed."Work_Profile_ID";
+ON sh."Work_Profile_ID" = ed."Work_Profile_ID"
+INNER JOIN site as si
+ON sa."Site_ID" = si."Site_ID";
 
 SELECT * FROM enterprise_distribution_calculations;
+
+SELECT "Market" FROM market_costs;
+SELECT * FROM site;
