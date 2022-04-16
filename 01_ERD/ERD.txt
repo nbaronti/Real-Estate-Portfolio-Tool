@@ -36,7 +36,7 @@ Site_Action VARCHAR
 headcount
 -
 Site_ID VARCHAR FK >- site.Site_ID
-Business_Unit_ID FK >- business_unit.Business_Unit_ID
+Business_Unit_ID VARCHAR FK >- business_unit.Business_Unit_ID
 Headcount INT
 
 market_costs
